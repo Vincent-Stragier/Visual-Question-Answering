@@ -20,12 +20,9 @@ class Attention(nn.Module):
         return w
 
     def logits(self, v, q):
-        num_objs = v.size(1)
-        q = q.unsqueeze(1).repeat(1, num_objs, 1)
-        vq = torch.cat((v, q), 2)
-        joint_repr = self.nonlinear(vq)
-        logits = self.linear(joint_repr)
-        return logits
+        # logits
+        return self.linear(self.nonlinear(
+            torch.cat((v, q.unsqueeze(1).repeat(1, v.size(1), 1)), 2)))
 
 
 class NewAttention(nn.Module):
@@ -42,15 +39,13 @@ class NewAttention(nn.Module):
         v: [batch, k, vdim]
         q: [batch, qdim]
         """
-        logits = self.logits(v, q)
-        w = nn.functional.softmax(logits, 1)
-        return w
+        return nn.functional.softmax(self.logits(v, q), 1)
 
     def logits(self, v, q):
         batch, k, _ = v.size()
-        v_proj = self.v_proj(v) # [batch, k, qdim]
+        v_proj = self.v_proj(v)  # [batch, k, qdim]
         q_proj = self.q_proj(q).unsqueeze(1).repeat(1, k, 1)
         joint_repr = v_proj * q_proj
         joint_repr = self.dropout(joint_repr)
-        logits = self.linear(joint_repr)
-        return logits
+        # logits = self.linear(joint_repr)
+        return self.linear(joint_repr)

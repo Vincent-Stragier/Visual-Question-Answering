@@ -1,16 +1,16 @@
+# import torchvision
+# import matplotlib.pyplot as plt
+# from PIL import Image
 import torchvision.models as models
 import torch.nn as nn
 from torch.autograd import Variable
 import torch
-from os import listdir
-from os.path import isfile, join
+# from os import listdir
+# from os.path import isfile, join
 
-from torchvision import transforms
+# from torchvision import transforms
 resize = 128
 crop = 128
-from PIL import Image
-import matplotlib.pyplot as plt
-import torchvision
 
 # class NormalizeInverse(torchvision.transforms.Normalize):
 #     """
@@ -56,12 +56,7 @@ import torchvision
 # v = transforms.ToPILImage()
 # x = v(x)
 # x.show()
-
-
-
-#################################"
-
-
+# "
 # x.show()
 #
 #
@@ -79,12 +74,10 @@ import torchvision
 # plt.imshow(x.permute(1,2,0))
 # plt.show()
 
-
-#
-#
 model_ft = models.resnet50(pretrained=True)
 model_ft.avgpool = nn.AdaptiveAvgPool2d(1)
 out = nn.Sequential(*list(model_ft.children())).cuda()
+
 for param in out.parameters():
     param.requires_grad = False
 
@@ -93,4 +86,3 @@ x = Variable(torch.rand((2, 3, 224, 224))).cuda()
 for block in out:
     x = block(x)
     print(x.shape)
-

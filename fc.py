@@ -4,8 +4,8 @@ from torch.nn.utils.weight_norm import weight_norm
 
 
 class FCNet(nn.Module):
-    """Simple class for non-linear fully connect network
-    """
+    """Simple class for non-linear fully connect network."""
+
     def __init__(self, dims):
         super(FCNet, self).__init__()
 

@@ -14,5 +14,5 @@ class SimpleClassifier(nn.Module):
         self.main = nn.Sequential(*layers)
 
     def forward(self, x):
-        logits = self.main(x)
-        return logits
+        # logits
+        return self.main(x)

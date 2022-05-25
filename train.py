@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import sys
 
+
 def instance_bce_with_logits(logits, labels):
     assert logits.dim() == 2
 
@@ -14,7 +15,7 @@ def instance_bce_with_logits(logits, labels):
 
 
 def compute_score_with_logits(logits, labels):
-    logits = torch.max(logits, 1)[1].data # argmax
+    logits = torch.max(logits, 1)[1].data  # argmax
     one_hots = torch.zeros(*labels.size()).cuda()
     one_hots.scatter_(1, logits.view(-1, 1), 1)
     scores = (one_hots * labels)
@@ -23,7 +24,8 @@ def compute_score_with_logits(logits, labels):
 
 def train(model, train_loader, eval_loader, num_epochs, output, lr, early_stop, logger):
 
-    optim = torch.optim.Adamax(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-8)
+    optim = torch.optim.Adamax(
+        model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-8)
     best_eval_score = 0
     es = 0
 
@@ -37,7 +39,6 @@ def train(model, train_loader, eval_loader, num_epochs, output, lr, early_stop, 
             v = Variable(v).cuda().to(torch.float32)
             q = Variable(q).cuda()
             a = Variable(a).cuda()
-
 
             logits = model(v, q, a)
             loss = instance_bce_with_logits(logits, a)
@@ -58,8 +59,10 @@ def train(model, train_loader, eval_loader, num_epochs, output, lr, early_stop, 
         model.train(True)
 
         logger.write('epoch %d, time: %.2f' % (epoch, time.time()-t))
-        logger.write('\ttrain_loss: %.2f, score: %.2f' % (model_loss, train_score))
-        logger.write('\teval score: %.2f (%.2f)' % (100 * eval_score, 100 * bound))
+        logger.write('\ttrain_loss: %.2f, score: %.2f' %
+                     (model_loss, train_score))
+        logger.write('\teval score: %.2f (%.2f)' %
+                     (100 * eval_score, 100 * bound))
 
         es += 1
         if eval_score > best_eval_score:

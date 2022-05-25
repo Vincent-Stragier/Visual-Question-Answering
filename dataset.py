@@ -8,13 +8,14 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
-from functools import lru_cache
-import sys
+# from functools import lru_cache
+# import sys
 import torchvision
 import torch.nn as nn
 from tqdm import tqdm
-from os import listdir
-from os.path import isfile, join
+# from os import listdir
+# from os.path import isfile, join
+
 
 class Dictionary(object):
     def __init__(self, word2idx=None, idx2word=None):
@@ -35,27 +36,31 @@ class Dictionary(object):
 
     def tokenize(self, sentence, add_word):
         sentence = sentence.lower()
-        sentence = sentence.replace(',', '').replace('?', '').replace('\'s', ' \'s')
+        sentence = sentence.replace(',', '').replace(
+            '?', '').replace('\'s', ' \'s')
         words = sentence.split()
-        tokens = []
-        if add_word:
-            for w in words:
-                tokens.append(self.add_word(w))
-        else:
-            for w in words:
-                tokens.append(self.word2idx[w])
-        return tokens
+        # tokens = []
+        # if add_word:
+        #     for w in words:
+        #         tokens.append(self.add_word(w))
+        # else:
+        #     for w in words:
+        #         tokens.append(self.word2idx[w])
+
+        # for w in words:
+        #     tokens.append(self.add_word(w) if add_word else self.word2idx[w])
+
+        return [(self.add_word(word) if add_word else self.word2idx[word]) for word in words]
 
     def dump_to_file(self, path):
         pickle.dump([self.word2idx, self.idx2word], open(path, 'wb'))
-        print('dictionary dumped to %s' % path)
+        print(f'dictionary dumped to {path}')
 
     @classmethod
     def load_from_file(cls, path):
-        print('loading dictionary from %s' % path)
+        print(f'loading dictionary from {path}')
         word2idx, idx2word = pickle.load(open(path, 'rb'))
-        d = cls(word2idx, idx2word)
-        return d
+        return cls(word2idx, idx2word)
 
     def add_word(self, word):
         if word not in self.word2idx:
@@ -68,15 +73,14 @@ class Dictionary(object):
 
 
 def _create_entry(question, answer):
-    if None!=answer:
+    if None != answer:
         answer.pop('image_id')
         answer.pop('question_id')
-    entry = {
-        'question_id' : question['question_id'],
-        'image_id'    : question['image_id'],
-        'question'    : question['question'],
-        'answer'      : answer}
-    return entry
+    return {
+        'question_id': question['question_id'],
+        'image_id': question['image_id'],
+        'question': question['question'],
+        'answer': answer}
 
 
 def _load_dataset(dataroot, name):
@@ -99,12 +103,10 @@ def _load_dataset(dataroot, name):
                       (name + '2014')
         )
 
-
-
     questions = sorted(json.load(open(question_path))['questions'],
                        key=lambda x: x['question_id'])
 
-    if "test" in name: # train, val
+    if "test" in name:  # train, val
         entries = []
         for question in questions:
             entries.append(_create_entry(question, None))
@@ -130,16 +132,20 @@ class VQAFeatureDataset(Dataset):
     def __init__(self, name, dictionary, dataroot='data', size=224, layer="layer3", inference=False):
 
         super(VQAFeatureDataset, self).__init__()
-        assert name in ['train', 'train36', 'val36', 'val', 'test2015', 'test201536']
+        assert name in ['train', 'train36', 'val36',
+                        'val', 'test2015', 'test201536']
 
-        #using resnet features, recommended
-        if name in ['train','val','test2015']:
-            features_filename = os.path.join(dataroot, "%s_resnet_%s.pkl" % (name, str(layer)))
+        # using resnet features, recommended
+        if name in ['train', 'val', 'test2015']:
+            features_filename = os.path.join(
+                dataroot, "%s_resnet_%s.pkl" % (name, str(layer)))
         if name in ['train36', 'val36', 'test201536']:
             features_filename = os.path.join(dataroot, "%s.pkl" % (name))
 
-        ans2label_path = os.path.join(dataroot, 'cache', 'trainval_ans2label.pkl')
-        label2ans_path = os.path.join(dataroot, 'cache', 'trainval_label2ans.pkl')
+        ans2label_path = os.path.join(
+            dataroot, 'cache', 'trainval_ans2label.pkl')
+        label2ans_path = os.path.join(
+            dataroot, 'cache', 'trainval_label2ans.pkl')
         self.ans2label = pickle.load(open(ans2label_path, 'rb'))
         self.label2ans = pickle.load(open(label2ans_path, 'rb'))
         self.num_ans_candidates = len(self.ans2label)
@@ -163,14 +169,15 @@ class VQAFeatureDataset(Dataset):
                                  std=[0.229, 0.224, 0.225]))
         self.transform = transforms.Compose(_transforms)
 
-
         if inference:
             return
 
         print("Loading %s" % features_filename)
         if not os.path.exists(features_filename):
-            print("Feature filename", features_filename,"not found, extracting...")
-            self.compute_features(self.entries, dataroot, name, layer, features_filename)
+            print("Feature filename", features_filename,
+                  "not found, extracting...")
+            self.compute_features(self.entries, dataroot,
+                                  name, layer, features_filename)
 
         self.features = pickle.load(open(features_filename, 'rb'))
 
@@ -190,7 +197,8 @@ class VQAFeatureDataset(Dataset):
             tokens = tokens[:max_length]
             if len(tokens) < max_length:
                 # Note here we pad in front of the sentence
-                padding = [self.dictionary.padding_idx] * (max_length - len(tokens))
+                padding = [self.dictionary.padding_idx] * \
+                    (max_length - len(tokens))
                 tokens = padding + tokens
             utils.assert_eq(len(tokens), max_length)
             entry['q_token'] = tokens
@@ -206,7 +214,7 @@ class VQAFeatureDataset(Dataset):
 
             answer = entry['answer']
 
-            if None!=answer:
+            if None != answer:
                 labels = np.array(answer['labels'])
                 scores = np.array(answer['scores'], dtype=np.float32)
                 if len(labels):
@@ -218,7 +226,6 @@ class VQAFeatureDataset(Dataset):
                     entry['answer']['labels'] = None
                     entry['answer']['scores'] = None
 
-
     def _read_image(self, fname):
         with open(fname, 'rb') as f:
             img = Image.open(f).convert('RGB')
@@ -228,6 +235,7 @@ class VQAFeatureDataset(Dataset):
         model = torchvision.models.resnet50(pretrained=True).cuda()
         model.eval()
         activation = {}
+
         def get_activation(name):
             def hook(model, input, output):
                 activation[name] = output.detach()
@@ -243,20 +251,22 @@ class VQAFeatureDataset(Dataset):
             img_id = entry["image_id"]
             if img_id in features:
                 continue
-            filename = os.path.join(dataroot, base_folder, 'COCO_%s_%s.jpg' % (str(base_folder),str(img_id).zfill(12)))
+            filename = os.path.join(dataroot, base_folder, 'COCO_%s_%s.jpg' % (
+                str(base_folder), str(img_id).zfill(12)))
             assert os.path.exists(filename), filename + " does not exists"
             image = self._read_image(filename)
             image_np16 = image.numpy().astype(np.float16)
             inp = torch.from_numpy(image_np16).to(torch.float32)
-            inp = torch.unsqueeze(inp, 0).cuda() # 1,dim,x,x
+            inp = torch.unsqueeze(inp, 0).cuda()  # 1,dim,x,x
             model(inp)
             out = activation[layer].squeeze(0)
             out = out.view(out.size(0), -1)
-            out = out.permute(1,0)
+            out = out.permute(1, 0)
             features[img_id] = out.cpu().numpy().astype(np.float16)
 
-        print("Dumping in filename %s with size %s" % (features_filename, str(len(features))))
-        pickle.dump(features, open(features_filename,'wb+'))
+        print("Dumping in filename %s with size %s" %
+              (features_filename, str(len(features))))
+        pickle.dump(features, open(features_filename, 'wb+'))
         del model
 
     def __getitem__(self, index):
@@ -269,7 +279,7 @@ class VQAFeatureDataset(Dataset):
         question_raw = entry['question']
 
         target = torch.tensor(0)
-        if None!=answer:
+        if None != answer:
             labels = answer['labels']
             scores = answer['scores']
             target = torch.zeros(self.num_ans_candidates)

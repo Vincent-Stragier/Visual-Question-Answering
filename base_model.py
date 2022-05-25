@@ -1,10 +1,9 @@
-import torch
+# import torch
 import torch.nn as nn
-from attention import Attention, NewAttention
+from attention import NewAttention  # ,Attention
 from language_model import WordEmbedding, QuestionEmbedding
 from classifier import SimpleClassifier
 from fc import FCNet
-
 
 
 class BaseModel(nn.Module):
@@ -27,17 +26,17 @@ class BaseModel(nn.Module):
         return: logits, not probs
         """
         w_emb = self.w_emb(q)
-        q_emb = self.q_emb(w_emb) # [batch, q_dim]
+        q_emb = self.q_emb(w_emb)  # [batch, q_dim]
 
         att = self.v_att(v, q_emb)
 
-        v_emb = (att * v).sum(1) # [batch, v_dim]
+        v_emb = (att * v).sum(1)  # [batch, v_dim]
         q_repr = self.q_net(q_emb)
         v_repr = self.v_net(v_emb)
         joint_repr = q_repr * v_repr
-        logits = self.classifier(joint_repr)
+        # logits
+        return self.classifier(joint_repr)
 
-        return logits
 
 def build_model(dataset, v_dim, num_hid, logger=None):
     w_emb = WordEmbedding(dataset.dictionary.ntoken, 300, 0.0)

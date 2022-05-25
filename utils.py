@@ -12,12 +12,12 @@ EPS = 1e-7
 
 
 def assert_eq(real, expected):
-    assert real == expected, '%s (true) vs %s (expected)' % (real, expected)
+    assert real == expected, f'{real} (true) vs {expected} (expected)'
 
 
 def assert_array_eq(real, expected):
     assert (np.abs(real-expected) < EPS).all(), \
-        '%s (true) vs %s (expected)' % (real, expected)
+        f'{real} (true) vs {expected} (expected)'
 
 
 def load_folder(folder, suffix):
@@ -52,7 +52,7 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
     else:
-        print('%s is not initialized.' % cname)
+        print(f'{cname} is not initialized.')
 
 
 def init_net(net, net_file):
